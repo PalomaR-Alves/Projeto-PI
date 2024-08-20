@@ -10,7 +10,7 @@ from PIL import Image
 # pip install matplotlib
 
 # carrega a imagem em BGR
-image = cv2.imread('C:caminho-ate-projeto\\Projeto-PI\\1.png')
+image = cv2.imread('C:\\caminho-ate-projeto\\Projeto-PI\\1.png')
 
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # converte a imagem para tons de cinza
 
