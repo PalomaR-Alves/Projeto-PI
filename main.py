@@ -5,11 +5,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# from skimage import io, color
 from skimage.filters import threshold_niblack # type: ignore
-# from PIL import Image
-
-# import easyocr # TODO: uncommets this when implementing model validation
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -71,20 +67,19 @@ def main():
                         [1/9, 1/9, 1/9]])
 
     #Execução do filtro através da biblioteca OpenCV (cv2)
-    image_blured = cv2.filter2D(image, cv2.CV_8U, mean_ker)
+    image_blured = cv2.filter2D(binary_image, cv2.CV_8U, mean_ker)
+    cv2.imshow('Imagem borrada', image_blured)
 
     # Subamostragem da imagem borrada
-    image_samp_blur = image_blured[::2,::2,:]
+    # image_samp_blur = image_blured[::2,::2,:]
+    # cv2.imshow('Imagem borrada (subamostragem)', image_samp_blur)
 
     # exibe as imagens
     # cv2.imshow('Imagem Original', image)
     # cv2.imshow('Imagem em Tons de Cinza', gray_image)
     # cv2.imshow('Imagem com Filtro Bilateral', bf_img)
     # cv2.imshow('Imagem Equalizada', eq_img)
-    # cv2.imshow('Imagem Binarizada com Niblack', binary_image)
-
-    cv2.imshow('Imagem borrada', image_blured)
-    cv2.imshow('Imagem borrada (subamostragem)', image_samp_blur)
+    cv2.imshow('Imagem Binarizada com Niblack', binary_image)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
