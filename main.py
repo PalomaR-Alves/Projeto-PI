@@ -61,6 +61,16 @@ def main():
     niblack_thresh = threshold_niblack(bf_img, window_size=25, k=0.8)
     binary_image = (bf_img > niblack_thresh).astype('uint8') * 255 # binarização com o limiar
 
+    # binarizacao de imagem usando a limiarização adaptativa
+
+    # args (em ordem): imagem, valor max atribuido a pixels q passam o limiar, indicação de forma de calculo do
+    # limiar, operação para manter binarização, tamanho da vizinhança, valor subtraido da constante C
+    # sobre o valor subtraido: se positivo, subtrai mais do limiar e facilita a classificação de um pixel como branco
+    # se negativo, subtrai menos ou adiciona, dificultando que um pixel seja classificado como branco
+    adap_media_thresh = cv2.adaptiveThreshold(bf_img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 4)
+
+    adap_gauss_thresh = cv2.adaptiveThreshold(bf_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 3)
+
     # Definição do filtro (máscara, kernel) de borramento
     mean_ker = np.array([[1/9, 1/9, 1/9],
                         [1/9, 1/9, 1/9],
@@ -75,11 +85,22 @@ def main():
     # cv2.imshow('Imagem borrada (subamostragem)', image_samp_blur)
 
     # exibe as imagens
-    # cv2.imshow('Imagem Original', image)
-    # cv2.imshow('Imagem em Tons de Cinza', gray_image)
-    # cv2.imshow('Imagem com Filtro Bilateral', bf_img)
-    # cv2.imshow('Imagem Equalizada', eq_img)
+    cv2.imshow('Imagem Original', image)
+    cv2.imshow('Imagem em Tons de Cinza', gray_image)
+    cv2.imshow('Imagem com Filtro Bilateral', bf_img)
+    cv2.imshow('Imagem Equalizada', eq_img)
     cv2.imshow('Imagem Binarizada com Niblack', binary_image)
+    cv2.imshow("Imagem Binarizada Adaptativa usando Média", adap_media_thresh)
+    cv2.imshow("Imagem Binarizada Adaptativa usando Gauss", adap_gauss_thresh)
+
+    # resizes das janelas
+    cv2.resizeWindow("Imagem Original", 200, 200)
+    cv2.resizeWindow("Imagem em Tons de Cinza", 200, 400)
+    cv2.resizeWindow("Imagem com Filtro Bilateral", 200, 200)
+    cv2.resizeWindow("Imagem Equalizada", 200, 200)
+    cv2.resizeWindow("Imagem Binarizada com Niblack", 200, 200)
+    cv2.resizeWindow("Imagem Binarizada Adaptativa usando Média", 200, 400)
+    cv2.resizeWindow("Imagem Binarizada Adaptativa usando Gauss", 200, 200)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
