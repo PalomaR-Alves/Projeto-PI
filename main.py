@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from skimage.filters import threshold_niblack # type: ignore
-from skimage import measure
+# from skimage.filters import threshold_niblack # type: ignore
+# from skimage import measure
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import image_utils
@@ -41,17 +41,20 @@ def main():
         # caminho completo do arquivo de entrada
         image_path = os.path.join(input_dir, filename)
         
-        image = cv2.imread(image_path)
+        img = cv2.imread(image_path)
         
-        pre_img = image_utils.preprocessing(image)
-        blur_img = image_utils.blur_image(pre_img)
-        seg_img = image_utils.segmentation(blur_img)
+        img = image_utils.preprocessing(img)
+        img = image_utils.blur_image(img)
+        img = image_utils.binarize_niblack(img)
+        # img = image_utils.binarize_otsu(img)
+        # img = image_utils.preprocess_image_for_ocr(img)
+        # img = image_utils.preprocess_image_with_connected_components(img)
 
         # caminho completo para salvar a imagem processada
         output_path = os.path.join(output_dir, filename)
         
         # salva a imagem processada
-        cv2.imwrite(output_path, seg_img)
+        cv2.imwrite(output_path, img)
     
 
     # reader = easyocr.Reader(['en'])  # Inicializa o EasyOCR
@@ -87,35 +90,7 @@ def main():
 
     adap_gauss_thresh = cv2.adaptiveThreshold(image_bilateral_filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 3)
 
-    # # Definição do filtro (máscara, kernel) de borramento
-    # mean_ker = np.array([[1/9, 1/9, 1/9],
-    #                     [1/9, 1/9, 1/9],
-    #                     [1/9, 1/9, 1/9]])
-
-    # #Execução do filtro através da biblioteca OpenCV (cv2)
-    # image_blured = cv2.filter2D(image_binarized_niblack, cv2.CV_8U, mean_ker)
-
-    # exibe as imagens
-    if args.debug_mode:
-        cv2.imshow('Imagem Original', image_original)
-        cv2.imshow('Imagem em Tons de Cinza', image_grayscale)
-        cv2.imshow('Imagem com Filtro Bilateral', image_bilateral_filtered)
-        cv2.imshow('Imagem Equalizada', image_gray_equalized)
-        cv2.imshow('Imagem Binarizada com Niblack', image_binarized_niblack)
-        cv2.imshow("Imagem Binarizada Adaptativa usando Média", adap_media_thresh)
-        cv2.imshow("Imagem Binarizada Adaptativa usando Gauss", adap_gauss_thresh)
-        # cv2.imshow('Imagem Borrada', image_blured)
-
-        # resizes das janelas
-        cv2.resizeWindow("Imagem Original", 200, 200)
-        cv2.resizeWindow("Imagem em Tons de Cinza", 200, 400)
-        cv2.resizeWindow("Imagem com Filtro Bilateral", 200, 200)
-        cv2.resizeWindow("Imagem Equalizada", 200, 200)
-        cv2.resizeWindow("Imagem Binarizada com Niblack", 200, 200)
-        cv2.resizeWindow("Imagem Binarizada Adaptativa usando Média", 200, 400)
-        cv2.resizeWindow("Imagem Binarizada Adaptativa usando Gauss", 200, 200)
-
-
+    
     image_hsv = cv2.cvtColor(image_original, cv2.COLOR_BGR2HSV)
     V = cv2.split(image_hsv)[2]
     image_hsv_thresholded = cv2.adaptiveThreshold(V, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 17, 3)
