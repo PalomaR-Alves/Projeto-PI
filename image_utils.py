@@ -1,8 +1,15 @@
+import os
 import cv2
 import numpy as np
 
 from skimage.filters import threshold_niblack # type: ignore
 from skimage import measure
+
+def preprocessing(img):
+    image_grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # conversão para tons de cinza
+    image_gray_equalized = cv2.equalizeHist(image_grayscale) # equaliza histograma da imagem
+    return image_gray_equalized
+
 
 def blur_image(img):
     # Definição do filtro (máscara, kernel) de borramento
@@ -15,18 +22,18 @@ def blur_image(img):
 
 def segmentation(img):
     
-    image_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    V = cv2.split(image_hsv)[2]
-    image_hsv_thresholded = cv2.adaptiveThreshold(V, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 17, 3)
-    labels = measure.label(image_hsv_thresholded, connectivity=2, background=0)
-    mask = np.zeros(image_hsv_thresholded.shape, dtype='uint8')
+    # image_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # V = cv2.split(img)[2]
+    image_gray_thresholded = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 17, 3)
+    labels = measure.label(image_gray_thresholded, connectivity=2, background=0)
+    mask = np.zeros(image_gray_thresholded.shape, dtype='uint8')
 
     # Ciclamos sobre cada etiqueta.
     for i, label in enumerate(np.unique(labels)):
         if label == 0:
             continue
 
-        label_mask = np.zeros(image_hsv_thresholded.shape, dtype='uint8')
+        label_mask = np.zeros(image_gray_thresholded.shape, dtype='uint8')
         label_mask[labels == label] = 255
         num_pixels = cv2.countNonZero(label_mask)
     

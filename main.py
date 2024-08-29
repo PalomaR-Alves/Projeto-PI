@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from skimage.filters import threshold_niblack # type: ignore
 from skimage import measure
 
 from argparse import ArgumentParser, RawTextHelpFormatter
+import image_utils
 
 __authors__ = "Kelves Costa, Paloma Raissa, Rubson Lima "
 __email__ = "kelves.nunes@ufrpe.br, palomaraissa10@gmail.com, limarbson7@gmail.com"
@@ -19,13 +21,11 @@ __programname__ = "Projeto PdI"
 def __get_args():
     parser = ArgumentParser(prog=__programname__, description="", formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", "--debug", dest="debug_mode", action="store_true", help="Active debug mode")
-    parser.add_argument("-i", "--image", dest="image", required=True, help="Input image path")
-    # ----- TODO: implement those args
-    parser.add_argument("-o", "--ouput", dest="output", help="[TODO]Output image path")
+    #parser.add_argument("-i", "--image", dest="image", required=True, help="Input image path")
+    parser.add_argument("-in", "--input", dest="input_dir", required=True, help="Input dir path")
+    parser.add_argument("-out", "--output", dest="output_dir", required=True, help="Output dir")
     parser.add_argument("--use-ocr", dest="use_ocr", action="store_true", help="[TODO] Use OCR.")
     parser.add_argument("-m", "--metric", dest="metrics", action="store_true", help="[TODO] Measure models performance.")
-
-
 
     parsed_args = parser.parse_args()
 
@@ -34,17 +34,39 @@ def __get_args():
 def main():
     args = __get_args()
     
+    input_dir = args.input_dir
+    output_dir = args.output_dir
+
+    for filename in os.listdir(input_dir):
+        # caminho completo do arquivo de entrada
+        image_path = os.path.join(input_dir, filename)
+        
+        image = cv2.imread(image_path)
+        
+        pre_img = image_utils.preprocessing(image)
+        blur_img = image_utils.blur_image(pre_img)
+        seg_img = image_utils.segmentation(blur_img)
+
+        # caminho completo para salvar a imagem processada
+        output_path = os.path.join(output_dir, filename)
+        
+        # salva a imagem processada
+        cv2.imwrite(output_path, seg_img)
+    
+
+    # reader = easyocr.Reader(['en'])  # Inicializa o EasyOCR
+
+"""
     image_original = cv2.imread(args.image) # carrega a imagem em BGR
 
-    image_grayscale = cv2.cvtColor(image_original, cv2.COLOR_BGR2GRAY) # converte a imagem para tons de cinza
-
-    image_gray_equalizaed = cv2.equalizeHist(image_grayscale) # equaliza histograma da imagem
+    image_grayscale = cv2.cvtColor(image_original, cv2.COLOR_BGR2GRAY) # conversão para tons de cinza
+    image_gray_equalized = cv2.equalizeHist(image_grayscale) # equaliza histograma da imagem
 
     # filtro bilateral para redução de ruído
     # d: diâmetro da vizinhança
     # sigmaColor: variância para filtro de intensidade, aumentar suaviza pixels com diferenças de cor maiores
     # sigmaSpace: variância para filtro espacial, aumentar suaviza pixels mais distantes
-    image_bilateral_filtered = cv2.bilateralFilter(image_gray_equalizaed, d=15, sigmaColor=75, sigmaSpace=75)
+    image_bilateral_filtered = cv2.bilateralFilter(image_gray_equalized, d=15, sigmaColor=75, sigmaSpace=75)
 
     # cálculo do limiar 
     # window_size: quantidade de pixels na vizinhança que terão seu desvio padrão e média calculados
@@ -78,7 +100,7 @@ def main():
         cv2.imshow('Imagem Original', image_original)
         cv2.imshow('Imagem em Tons de Cinza', image_grayscale)
         cv2.imshow('Imagem com Filtro Bilateral', image_bilateral_filtered)
-        cv2.imshow('Imagem Equalizada', image_gray_equalizaed)
+        cv2.imshow('Imagem Equalizada', image_gray_equalized)
         cv2.imshow('Imagem Binarizada com Niblack', image_binarized_niblack)
         cv2.imshow("Imagem Binarizada Adaptativa usando Média", adap_media_thresh)
         cv2.imshow("Imagem Binarizada Adaptativa usando Gauss", adap_gauss_thresh)
@@ -120,6 +142,7 @@ def main():
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
+"""
+    
 if __name__ == '__main__':
      main()
