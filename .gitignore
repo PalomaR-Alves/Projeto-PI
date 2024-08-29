@@ -1,2 +1,7 @@
 env
 __pycache__
+outputs
+
+*.tar*
+train/
+test/
