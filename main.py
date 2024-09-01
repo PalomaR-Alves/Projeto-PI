@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import cv2
-import numpy as np
 from argparse import ArgumentParser, RawTextHelpFormatter
 import config
 import image_utils
@@ -16,11 +18,9 @@ def __get_args():
     parser.add_argument("-d", "--debug", dest="debug_mode", action="store_true", help="Active debug mode")
     parser.add_argument("-in", "--input", dest="input_dir", default=config.DATA, help="Input dir path")
     parser.add_argument("-out", "--output", dest="output_dir", default=config.OUTPUTS, help="Output dir")
-    parser.add_argument("--use-ocr", dest="use_ocr", action="store_true", help="Use OCR for text recognition.")
-    parser.add_argument("-m", "--metric", dest="metrics", action="store_true", help="Measure models performance.")
-    parser.add_argument("--segmentation", dest="segmentation_method", choices=["connected", "watershed", "kmeans", "contours"], default="connected", help="Segmentation method to use.")
-    parser.add_argument("--blur", dest="blur_method", choices=["mean", "gaussian", "median", "bilateral"], default="mean", help="Blurring method to use.")
-    parser.add_argument("--high-pass", dest="high_pass_filter", action="store_true", help="Apply high-pass filter.")
+    parser.add_argument("--use-ocr", dest="use_ocr", action="store_true", help="[TODO] Use OCR.")
+    parser.add_argument("-m", "--metric", dest="metrics", action="store_true",
+                        help="[TODO] Measure models performance.")
     return parser.parse_args()
 
 
@@ -33,30 +33,8 @@ def process_image(img, args):
         pass
 
     img = image_utils.preprocessing(img)
-
-    # Aplica o método de borramento selecionado
-    if args.blur_method == "mean":
-        img = image_utils.blur_image(img)
-    elif args.blur_method == "gaussian":
-        img = image_utils.gaussian_blur(img)
-    elif args.blur_method == "median":
-        img = image_utils.median_blur(img)
-    elif args.blur_method == "bilateral":
-        img = image_utils.bilateral_filter(img)
-
-    # Aplica o filtro passa-alta se selecionado
-    if args.high_pass_filter:
-        img = image_utils.high_pass_filter(img)
-
-    # Aplica o método de segmentação selecionado
-    if args.segmentation_method == "connected":
-        img = image_utils.segmentation(img)
-    elif args.segmentation_method == "watershed":
-        img = image_utils.watershed_segmentation(img)
-    elif args.segmentation_method == "kmeans":
-        img = image_utils.kmeans_segmentation(img)
-    elif args.segmentation_method == "contours":
-        img = image_utils.contour_based_segmentation(img)
+    img = image_utils.blur_image(img)
+    img = image_utils.binarize_niblack(img)
 
     return img
 
