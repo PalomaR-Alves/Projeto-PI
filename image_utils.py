@@ -20,6 +20,9 @@ def blur_image(img):
     #Execução do filtro através da biblioteca OpenCV (cv2)
     return cv2.filter2D(img, cv2.CV_8U, mean_ker)
 
+def blur(img):
+        return cv2.GaussianBlur(img, (3, 3), 0)
+
 def binarize_niblack(img):
     # cálculo do limiar 
     # window_size: quantidade de pixels na vizinhança que terão seu desvio padrão e média calculados
@@ -57,7 +60,7 @@ def adaptive_limiar(img, mode):
 
 def segmentation(img):
     
-    # image_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     image_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     V = cv2.split(image_hsv)[2]
     image_gray_thresholded = cv2.adaptiveThreshold(V, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 17, 3)
