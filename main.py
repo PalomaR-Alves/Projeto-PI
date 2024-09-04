@@ -4,14 +4,11 @@
 import os
 import cv2
 import numpy as np
-# import matplotlib.pyplot as plt
-
-# from skimage.filters import threshold_niblack # type: ignore
-# from skimage import measure
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import image_utils
-import ocr_utils
+from ocr_utils import read_text_tesseract
+# from ocr_utils import get_labels
 
 __authors__ = "Kelves Costa, Paloma Raissa, Rubson Lima "
 __email__ = "kelves.nunes@ufrpe.br, palomaraissa10@gmail.com, limarbson7@gmail.com"
@@ -38,7 +35,9 @@ def main():
     input_dir = args.input_dir
     output_dir = args.output_dir
 
-    labels = np.array([])
+    if args.use_ocr:
+        labels = np.array([])
+        # true_labels = get_labels
 
     for filename in os.listdir(input_dir):
         # caminho completo do arquivo de entrada
@@ -47,17 +46,19 @@ def main():
         img = cv2.imread(image_path)
         
         img = image_utils.preprocessing(img)
-        img = image_utils.blur(img)
+        img = image_utils.normalize(img)
         img = image_utils.bilateral_filter(img)
-        # img = image_utils.binarize_niblack(img)
-        # img = image_utils.binarize_otsu(img)
+        img = image_utils.adaptive_limiar(img, mode='gaus')
+        # img = image_utils.segmentation(img)
 
-        np.append(labels, ocr_utils.get_text(img))
+        if args.use_ocr:
+            text = read_text_tesseract(img)
+            print(text)
+            # np.append(labels, label_read)
+
         
-        # caminho completo para salvar a imagem processada
-        output_path = os.path.join(output_dir, filename)
-        
-        if args.save_output:
+        if args.save_output: # and not args.output_dir
+            output_path = os.path.join(output_dir, filename)
             cv2.imwrite(output_path, img)
     
 if __name__ == '__main__':
