@@ -1,4 +1,3 @@
-import os
 import cv2
 import numpy as np
 
@@ -10,6 +9,9 @@ def preprocessing(img):
     img = cv2.equalizeHist(img) # equaliza histograma da imagem
     return img
 
+def normalize(img):
+    norm_img = np.zeros((img.shape[0], img.shape[1]))
+    return cv2.normalize(img, norm_img, 0, 255, cv2.NORM_MINMAX)
 
 def blur_image(img):
     # Definição do filtro (máscara, kernel) de borramento
@@ -35,7 +37,7 @@ def binarize_niblack(img):
     return image_binarized_niblack
 
 def binarize_otsu(img):
-    (T, threshInv) = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    (_, threshInv) = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     return threshInv
 
 def bilateral_filter(img):
@@ -82,58 +84,3 @@ def segmentation(img):
 
     return mask
 
-def preprocess_image_for_ocr(img):
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Apply bilateral filter to reduce noise while keeping edges sharp
-    filtered = cv2.bilateralFilter(gray, 11, 17, 17)
-
-    # Apply adaptive thresholding or Otsu's thresholding for binarization
-    _, binary = cv2.threshold(filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-    # Apply morphological operations to remove small noise and close gaps
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=2)
-
-    # Invert the image to make digits white on black background
-    inverted = cv2.bitwise_not(morph)
-
-    return inverted
-
-def preprocess_image_with_connected_components(img):
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Apply Gaussian Blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Apply Otsu's thresholding to get binary image
-    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
-    # Connected components analysis
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
-
-    # Create an output image to draw on
-    output_image = np.zeros_like(img)
-
-    for i in range(1, num_labels):
-        x, y, w, h, area = stats[i]
-        aspect_ratio = w / float(h)
-        
-        # Filter components based on size and aspect ratio
-        if 100 < area < 1000 and 0.2 < aspect_ratio < 1.0:
-            # Extract the component
-            component_mask = (labels == i).astype("uint8") * 255
-            component = component_mask[y:y+h, x:x+w]
-            
-            # Optionally draw bounding box (for visualization)
-            cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-            # Combine component into the final output
-            output_image[y:y+h, x:x+w] = cv2.bitwise_or(output_image[y:y+h, x:x+w], component)
-
-    # Invert the image (if needed for OCR)
-    inverted_output = cv2.bitwise_not(output_image)
-
-    return inverted_output
