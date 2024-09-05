@@ -7,15 +7,14 @@ import numpy as np
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import image_utils
-from ocr_utils import read_text_tesseract
-# from ocr_utils import get_labels
+# from ocr_utils import readtext
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 __authors__ = "Kelves Costa, Paloma Raissa, Rubson Lima "
 __email__ = "kelves.nunes@ufrpe.br, palomaraissa10@gmail.com, limarbson7@gmail.com"
 
 __programname__ = "Projeto PdI"
-# rodar no terminal
-# pip install opencv-python matplotlib scikit-image pillow
+
 def __get_args():
     parser = ArgumentParser(prog=__programname__, description="", formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", "--debug", dest="debug_mode", action="store_true", help="Active debug mode")
@@ -29,6 +28,18 @@ def __get_args():
 
     return parsed_args
 
+def validate(y_test, y_pred):
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, pos_label=3)
+    recall = recall_score(y_test, y_pred, pos_label=3)
+    f1 = f1_score(y_test, y_pred, pos_label=3)
+
+    print(f"""acc: {accuracy}
+          precision? {precision}
+          recall: {recall}
+          f1? {f1}""")
+
+
 def main():
     args = __get_args()
     
@@ -37,29 +48,30 @@ def main():
 
     if args.use_ocr:
         labels = np.array([])
-        # true_labels = get_labels
 
     for filename in os.listdir(input_dir):
         # caminho completo do arquivo de entrada
         image_path = os.path.join(input_dir, filename)
         
         img = cv2.imread(image_path)
-        
+
+        if img is None:
+            pass
+
         img = image_utils.preprocessing(img)
+        img = image_utils.log_img(img)
         img = image_utils.normalize(img)
-        img = image_utils.bilateral_filter(img)
-        img = image_utils.adaptive_limiar(img, mode='gaus')
-        # img = image_utils.segmentation(img)
+        img = image_utils.binarize_niblack(img)
+        img = image_utils.gray_segmentation(img)
+
 
         if args.use_ocr:
-            text = read_text_tesseract(img)
-            print(text)
-            # np.append(labels, label_read)
+            text = readtext(img, reader='easyocr')
+            labels = np.append(labels, text)
 
-        
-        if args.save_output: # and not args.output_dir
+        if args.save_output:# and img is not None: # and not args.output_dir
             output_path = os.path.join(output_dir, filename)
             cv2.imwrite(output_path, img)
-    
+
 if __name__ == '__main__':
      main()
