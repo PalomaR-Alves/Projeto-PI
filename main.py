@@ -24,7 +24,9 @@ def __get_args():
     return parser.parse_args()
 
 
-def process_image(img, args):
+def process_image(img, args, method):
+    print(f"[INFO] Processando imagem usando o método de segmentação: {method}...")
+
     if args.use_ocr:
         img = image_utils.preprocess_image_for_ocr(img)
 
@@ -36,7 +38,9 @@ def process_image(img, args):
     img = image_utils.blur_image(img)
     img = image_utils.binarize_niblack(img)
 
-    return img
+    segmented_img = image_utils.segmentation(img, method=method)
+
+    return segmented_img
 
 
 def main():
@@ -48,20 +52,24 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    segmentation_methods = ["connected_components", "watershed", "kmeans"]
+
     for filename in os.listdir(input_dir):
         image_path = os.path.join(input_dir, filename)
-
         img = cv2.imread(image_path)
 
         if img is None:
             print(f"Failed to load image {filename}")
             continue
 
-        processed_img = process_image(img, args)
+        for method in segmentation_methods:
+            processed_img = process_image(img, args, method)
 
-        output_path = os.path.join(output_dir, filename)
+            output_filename = f"{os.path.splitext(filename)[0]}_{method}.png"
+            output_path = os.path.join(output_dir, output_filename)
 
-        cv2.imwrite(output_path, processed_img)
+            cv2.imwrite(output_path, processed_img)
+            print(f"[INFO] Imagem processada salva em: {output_path}")
 
 
 if __name__ == '__main__':
