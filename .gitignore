@@ -5,3 +5,4 @@ outputs
 *.tar*
 train/
 test/
+input/*
