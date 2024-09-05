@@ -18,6 +18,8 @@ __email__ = "kelves.nunes@ufrpe.br, palomaraissa10@gmail.com, limarbson7@gmail.c
 __programname__ = "Projeto PdI"
 # rodar no terminal
 # pip install opencv-python matplotlib scikit-image pillow
+# para executar: python main.py -in input -out output 
+
 def __get_args():
     parser = ArgumentParser(prog=__programname__, description="", formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", "--debug", dest="debug_mode", action="store_true", help="Active debug mode")
@@ -43,12 +45,29 @@ def main():
         
         img = cv2.imread(image_path)
         
-        img = image_utils.preprocessing(img)
-        img = image_utils.blur_image(img)
-        img = image_utils.binarize_niblack(img)
+        if img is None:
+            print(f"Failed to load image {filename}")
+            continue
+
+        # img = image_utils.preprocessing(img)
+        # img = image_utils.bilateral_filter(img)
+        # img = image_utils.blur_image(img)
+        # img = image_utils.mean_blur(img)
+        # img = image_utils.median_blur(img)
+        # img = image_utils.binarize_niblack(img)
         # img = image_utils.binarize_otsu(img)
-        # img = image_utils.preprocess_image_for_ocr(img)
+        # img = image_utils.adaptive_limiar(img, 'mean')
         # img = image_utils.preprocess_image_with_connected_components(img)
+        # img = image_utils.connected_components_segmentation(img)
+        # img = image_utils.find_contours(img)
+        # img = image_utils.canny_edges(img)
+        # img = image_utils.sobel_edges(img)
+        # img = image_utils.watershed_segmentation(img)
+        # img = image_utils.kmeans_segmentation(img)
+        # img = image_utils.preprocess_image_for_ocr(img)
+        # img = image_utils.find_contours(img)
+        img = image_utils.kmeans_segmentation(img)
+        
 
         # caminho completo para salvar a imagem processada
         output_path = os.path.join(output_dir, filename)
