@@ -3,9 +3,13 @@
 
 import os
 import cv2
+import numpy as np
+
 from argparse import ArgumentParser, RawTextHelpFormatter
 import config
 import image_utils
+from ocr_utils import read_text_tesseract
+# from ocr_utils import get_labels
 
 __authors__ = "Kelves Costa, Paloma Raissa, Rubson Lima"
 __email__ = "kelves.nunes@ufrpe.br, palomaraissa10@gmail.com, limarbson7@gmail.com"
@@ -16,6 +20,7 @@ def __get_args():
     parser = ArgumentParser(prog=__programname__, description="", formatter_class=RawTextHelpFormatter)
     parser.add_argument("-in", "--input", dest="input_dir", default=config.DATA, help="Input dir path")
     parser.add_argument("-out", "--output", dest="output_dir", default=config.OUTPUTS, help="Output dir")
+
     return parser.parse_args()
 
 
@@ -43,8 +48,9 @@ def main():
     input_dir = args.input_dir
     output_dir = args.output_dir
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if args.use_ocr:
+        labels = np.array([])
+        # true_labels = get_labels
 
     for filename in os.listdir(input_dir):
         print(f"Processando imagem: {filename}")

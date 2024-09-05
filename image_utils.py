@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+from skimage.filters import threshold_niblack # type: ignore
+from skimage import measure
+
 
 def segmentation(img):
     print("Segmentando a imagem...")
@@ -17,6 +20,10 @@ def segmentation(img):
 
     print("Segmentação concluída.")
     return segmented_img
+  
+  
+def blur(img):
+        return cv2.GaussianBlur(img, (3, 3), 0)
 
 
 def detect_edges(img):
@@ -109,6 +116,7 @@ def isolate_number(img):
 
     print("Nenhum número encontrado.")
     return img  # Retorna a imagem original se não encontrar nada
+
 
 
 def preprocessing(img):
