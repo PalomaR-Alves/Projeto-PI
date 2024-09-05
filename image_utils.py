@@ -1,101 +1,139 @@
 import cv2
 import numpy as np
-from skimage.filters import threshold_niblack  # type: ignore
-from skimage import measure
-
-
-def preprocessing(img):
-    # Verifica se a imagem já está em escala de cinza
-    if len(img.shape) == 3 and img.shape[2] == 3:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # conversão para tons de cinza
-    img = cv2.equalizeHist(img)  # equaliza histograma da imagem
-    return img
-
-
-def blur_image(img):
-    mean_ker = np.array([[1 / 9, 1 / 9, 1 / 9],
-                         [1 / 9, 1 / 9, 1 / 9],
-                         [1 / 9, 1 / 9, 1 / 9]])
-    return cv2.filter2D(img, cv2.CV_8U, mean_ker)
-
-
-def binarize_niblack(img):
-    niblack_thresh = threshold_niblack(img, window_size=25, k=0.8)
-    image_binarized_niblack = (img > niblack_thresh).astype('uint8') * 255
-    return image_binarized_niblack
-
-
-def binarize_otsu(img):
-    (T, threshInv) = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-    return threshInv
-
-
-def bilateral_filter(img):
-    return cv2.bilateralFilter(img, d=15, sigmaColor=75, sigmaSpace=75)
-
-
-def adaptive_limiar(img, mode):
-    if mode == "mean":
-        return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 4)
-
-    if mode == "gaus":
-        return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
 
 def segmentation(img):
-    if img is None or img.size == 0:
-        raise ValueError("Input image is empty or None")
+    print("Segmentando a imagem...")
 
+    # Verifica se a imagem é colorida (3 canais)
     if len(img.shape) == 3 and img.shape[2] == 3:
-        image_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # Converte para tons de cinza
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
-        raise ValueError("Input image must be a color image")
+        gray = img
 
-    V = cv2.split(image_hsv)[2]
-    image_gray_thresholded = cv2.adaptiveThreshold(V, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 17, 3)
-    labels = measure.label(image_gray_thresholded, connectivity=2, background=0)
-    mask = np.zeros(image_gray_thresholded.shape, dtype='uint8')
+    # Aplica a segmentação baseada em binarização Otsu
+    _, segmented_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    for _, label in enumerate(np.unique(labels)):
-        if label == 0:
-            continue
-
-        label_mask = np.zeros(image_gray_thresholded.shape, dtype='uint8')
-        label_mask[labels == label] = 255
-        num_pixels = cv2.countNonZero(label_mask)
-
-        if 50 < num_pixels < 500:
-            mask = cv2.add(mask, label_mask)
-
-    return mask
+    print("Segmentação concluída.")
+    return segmented_img
 
 
-def preprocess_image_for_ocr(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    filtered = cv2.bilateralFilter(gray, 11, 17, 17)
-    _, binary = cv2.threshold(filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=2)
-    inverted = cv2.bitwise_not(morph)
-    return inverted
+def detect_edges(img):
+    print("Detectando bordas na imagem...")
+
+    # Verifica se a imagem é colorida (3 canais)
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        # Converte para tons de cinza
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+
+    # Aplica a detecção de bordas usando o algoritmo Canny
+    edges = cv2.Canny(gray, 100, 200)
+
+    print("Detecção de bordas concluída.")
+    return edges
 
 
-def preprocess_image_with_connected_components(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+def region_based_segmentation(img):
+    print("Segmentando a imagem por regiões usando Watershed...")
+
+    # Converte a imagem para tons de cinza, se não for já em tons de cinza
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+
+    # Desfoca a imagem para remover ruído
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Aplica a binarização Otsu para obter a imagem binária
     _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
-    output_image = np.zeros_like(img)
 
-    for i in range(1, num_labels):
-        x, y, w, h, area = stats[i]
-        aspect_ratio = w / float(h)
+    # Remove pequenas regiões brancas usando morfologia
+    kernel = np.ones((3, 3), np.uint8)
+    opening = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=2)
 
-        if 100 < area < 1000 and 0.2 < aspect_ratio < 1.0:
-            component_mask = (labels == i).astype("uint8") * 255
-            component = component_mask[y:y + h, x:x + w]
-            cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            output_image[y:y + h, x:x + w] = cv2.bitwise_or(output_image[y:y + h, x:x + w], component)
+    # Dilation para obter o fundo
+    sure_bg = cv2.dilate(opening, kernel, iterations=3)
 
-    inverted_output = cv2.bitwise_not(output_image)
-    return inverted_output
+    # Distância para encontrar o foreground
+    dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+    _, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
+
+    # Obtenha a área desconhecida
+    sure_fg = np.uint8(sure_fg)
+    unknown = cv2.subtract(sure_bg, sure_fg)
+
+    # Marcação de conectividade
+    _, markers = cv2.connectedComponents(sure_fg)
+
+    # Adiciona 1 a todas as marcas para que o fundo seja 1 em vez de 0
+    markers = markers + 1
+
+    # Marca a área desconhecida como 0
+    markers[unknown == 0] = 0
+
+    # Aplica o algoritmo de Watershed
+    img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) if len(img.shape) == 2 else img
+    markers = cv2.watershed(img_color, markers)
+    img_color[markers == -1] = [255, 0, 0]  # Marca as bordas com vermelho
+
+    print("Segmentação por regiões concluída.")
+    return img_color
+
+
+def isolate_number(img):
+    print("Isolando números...")
+    # Verifica se a imagem tem 3 canais (colorida)
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        # Converte para tons de cinza
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+
+    # Aplica binarização para isolar objetos de interesse
+    _, binary_img = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+
+    # Encontra contornos na imagem binarizada
+    contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        # Obtém o retângulo delimitador para cada contorno
+        x, y, w, h = cv2.boundingRect(contour)
+        if w > 10 and h > 10:  # Filtra áreas muito pequenas
+            isolated_img = img[y:y + h, x:x + w]
+            print(f"Número isolado com tamanho {w}x{h}")
+            return isolated_img
+
+    print("Nenhum número encontrado.")
+    return img  # Retorna a imagem original se não encontrar nada
+
+
+def preprocessing(img):
+    print("Aplicando pré-processamento (conversão para tons de cinza)...")
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+
+    # Normaliza a imagem
+    normalized_img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+    print("Pré-processamento concluído.")
+    return normalized_img
+
+
+def blur_image(img):
+    print("Aplicando desfoque Gaussian para reduzir ruído...")
+    blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
+    print("Desfoque aplicado.")
+    return blurred_img
+
+
+def binarize_otsu(img):
+    print("Aplicando binarização Otsu...")
+    _, binary_img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    print("Binarização concluída.")
+    return binary_img
+
