@@ -41,18 +41,6 @@ def save_labels(df, mode='train'):
     
     df.to_csv(LABELS_FILE)
 
-def convert_label_2(label):
-    # If it's a list-like string, evaluate it
-    if isinstance(label, str) and label.startswith('['):
-        try:
-            label_list = ast.literal_eval(label)  # Safely evaluate the string as a Python list
-            return int(''.join(map(str, map(int, label_list))))  # Convert list to concatenated integer
-        except (ValueError, SyntaxError):
-            return None  # Handle any errors in conversion
-    else:
-        # If it's not a list, convert directly to int
-        return int(float(label))
-
 def pad_label(label, max_length=4):
     # Ensure the label is a list of integers
     if isinstance(label, int):
@@ -75,7 +63,8 @@ def convert_label(label):
     # Convert the list elements to integers
     label = list(map(int, label))
 
-    return pad_label(label)
+    return ''.join(map(str,label))
+    # return pad_label(label)
 
 def load_csv_data(mode='train'):
     if mode == 'train':
