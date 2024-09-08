@@ -7,8 +7,8 @@ from skimage import measure
 
 def preprocessing(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # conversão para tons de cinza
-    img = cv2.resize(img, (100, 100))
-    img = cv2.equalizeHist(img) # equaliza histograma da imagem
+    # img = cv2.resize(img, (128, 128))
+    # img = cv2.equalizeHist(img) # equaliza histograma da imagem
     return img
 
 def sobel(img):
@@ -88,7 +88,8 @@ def high_pass(img):
     blur = cv2.GaussianBlur(img,(31,31),0)
     filtered = img - blur
     filtered = filtered + 127*np.ones(img.shape, np.uint8)
-    cv2.imwrite('output.jpg', filtered)
+    # cv2.imwrite('output.jpg', filtered)
+    return filtered
 
 def highpass(img, sigma):
     return img - cv2.GaussianBlur(img, (0,0), sigma) + 127
@@ -100,12 +101,12 @@ def binarize_niblack(img):
     # window_size maior: binarização mais suave mas pode perder detalhes menores
     # k: com valor menor, o limiar local será mais próx da média dos pixels locais
     #    com valor maior, pixels precisam ser mais "brilhantes" pra não serem tidos como fundo
-    niblack_thresh = threshold_niblack(img, window_size=25, k=0.8)
+    niblack_thresh = threshold_niblack(img, window_size=5, k=0.8)
     image_binarized_niblack = (img > niblack_thresh).astype('uint8') * 255 # binarização com o limiar
     return image_binarized_niblack
 
 def detect_edges(img):
-    print("Detectando bordas na imagem...")
+    # print("Detectando bordas na imagem...")
 
     # Verifica se a imagem é colorida (3 canais)
     if len(img.shape) == 3 and img.shape[2] == 3:
@@ -117,7 +118,7 @@ def detect_edges(img):
     # Aplica a detecção de bordas usando o algoritmo Canny
     edges = cv2.Canny(gray, 100, 200)
 
-    print("Detecção de bordas concluída.")
+    # print("Detecção de bordas concluída.")
     return edges
 
 
@@ -165,12 +166,12 @@ def region_based_segmentation(img):
     markers = cv2.watershed(img_color, markers)
     img_color[markers == -1] = [255, 0, 0]  # Marca as bordas com vermelho
 
-    print("Segmentação por regiões concluída.")
+    # print("Segmentação por regiões concluída.")
     return img_color
 
 
 def isolate_number(img):
-    print("Isolando números...")
+    # print("Isolando números...")
     # Verifica se a imagem tem 3 canais (colorida)
     if len(img.shape) == 3 and img.shape[2] == 3:
         # Converte para tons de cinza
@@ -189,16 +190,16 @@ def isolate_number(img):
         x, y, w, h = cv2.boundingRect(contour)
         if w > 10 and h > 10:  # Filtra áreas muito pequenas
             isolated_img = img[y:y + h, x:x + w]
-            print(f"Número isolado com tamanho {w}x{h}")
+            # print(f"Número isolado com tamanho {w}x{h}")
             return isolated_img
 
-    print("Nenhum número encontrado.")
+    # print("Nenhum número encontrado.")
     return img  # Retorna a imagem original se não encontrar nada
 
 
 
 def preprocessing(img):
-    print("Aplicando pré-processamento (conversão para tons de cinza)...")
+    # print("Aplicando pré-processamento (conversão para tons de cinza)...")
     if len(img.shape) == 3 and img.shape[2] == 3:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
@@ -206,21 +207,21 @@ def preprocessing(img):
 
     # Normaliza a imagem
     normalized_img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
-    print("Pré-processamento concluído.")
+    # print("Pré-processamento concluído.")
     return normalized_img
 
 
 def blur_image(img):
-    print("Aplicando desfoque Gaussian para reduzir ruído...")
+    # print("Aplicando desfoque Gaussian para reduzir ruído...")
     blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
-    print("Desfoque aplicado.")
+    # print("Desfoque aplicado.")
     return blurred_img
 
 
 def binarize_otsu(img):
-    print("Aplicando binarização Otsu...")
+    # print("Aplicando binarização Otsu...")
     _, binary_img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    print("Binarização concluída.")
+    # print("Binarização concluída.")
     return binary_img
 
 #Definição da métrica de distância (euclidiana)
@@ -302,3 +303,27 @@ def gray_segmentation(img):
             mask = cv2.add(mask, label_mask)
 
     return mask
+
+def segmentation_with_kmeans(img, k=2):
+    # Reshape the image to a 2D array of pixels
+    pixels = img.reshape((-1, 1))
+
+    # Apply KMeans clustering
+    kmeans = cv2.kmeans(np.float32(pixels), k, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2), 10, cv2.KMEANS_RANDOM_CENTERS)[1]
+
+    # Reshape the result back to the original image shape
+    segmented_img = kmeans.reshape(img.shape)
+
+    # Apply a threshold to separate the regions
+    _, segmented_mask = cv2.threshold(segmented_img, 0, 255, cv2.THRESH_BINARY_INV)
+
+    return segmented_mask
+
+def kmeans_segmentation(img, k=4):
+    Z = img.reshape((-1, 3))
+    Z = np.float32(Z)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    ret, label, center = cv2.kmeans(Z, k, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+    center = np.uint8(center)
+    res = center[label.flatten()]
+    return res.reshape((img.shape))
