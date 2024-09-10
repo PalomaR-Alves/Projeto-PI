@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import ast
 
-
 def load_matlab_format_data(mode='train'):
     if mode == 'train':
         LABELS_FILE = "./train/digitStruct.mat"
@@ -28,29 +27,18 @@ def load_matlab_format_data(mode='train'):
     return df
     # return image_files,bbox_and_labels
 
-def get_labels(mode='train'):
+def get_matlab_format_labels(mode='train'):
     df = load_matlab_format_data(mode=mode)
     labels = df['label'].apply(lambda x: [int(i) for i in x] if isinstance(x, list) else int(x))
     return labels
 
-def save_labels(df, mode='train'):
+def save_to_csv(df, mode='train'):
     if mode == 'train':
         LABELS_FILE = "./train/labels.csv"
     if mode == 'test':
         LABELS_FILE = "./test/labels.csv"
     
     df.to_csv(LABELS_FILE)
-
-def pad_label(label, max_length=4):
-    # Ensure the label is a list of integers
-    if isinstance(label, int):
-        label = [label]  # Convert single integer to list
-    elif isinstance(label, str):
-        label = ast.literal_eval(label)  # Convert string to list
-
-    # Convert elements to integers and pad with zeros to max_length
-    label = [int(l) for l in label]
-    return [0] * (max_length - len(label)) + label  # Add leading zeros
     
 def convert_label(label):
     # If the label is a string, parse it into a list
@@ -77,4 +65,3 @@ def load_csv_data(mode='train'):
     
     # we can also make something like return df.iloc[0:60] to return a subset of the data
     return  df #['label']
-
