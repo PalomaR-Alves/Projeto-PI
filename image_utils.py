@@ -7,24 +7,31 @@ from skimage import measure
 
 def preprocessing(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # conversão para tons de cinza
-    # img = cv2.resize(img, (128, 128))
-    # img = cv2.equalizeHist(img) # equaliza histograma da imagem
     return img
 
-def sobel(img):
-    img = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3) # horizontal pass
-    img = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3) # vertical pass
+def to_grayscale(img):
+    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+def resize(img, size=128):
+    return cv2.resize(img, (size, size))
+
+def equalize(img):
+    return cv2.equalizeHist(img)
+
+def sobel(img, ksize=3):
+    img = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=ksize) # horizontal pass
+    img = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=ksize) # vertical pass
     return img
 
 def laplacian(img, c=1):
     if c==1:
         laplacian_kernelA0 = np.array([[0, -1, 0],[-1, 4, -1],[0, -1, 0]]) # Using c = +1
-        moon_laplacianA0 = cv2.filter2D(img, cv2.CV_16S, laplacian_kernelA0) # Using c = +1
-        res = img + c * moon_laplacianA0
+        img_laplacianA0 = cv2.filter2D(img, cv2.CV_16S, laplacian_kernelA0) # Using c = +1
+        res = img + c * img_laplacianA0
     if c==(-1):
         laplacian_kernelA1 = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]]) # Using c = -1
-        moon_laplacianA1 = cv2.filter2D(img, cv2.CV_16S, laplacian_kernelA1) # Using c = -1
-        res = img + c * moon_laplacianA1
+        img_laplacianA1 = cv2.filter2D(img, cv2.CV_16S, laplacian_kernelA1) # Using c = -1
+        res = img + c * img_laplacianA1
     
     return res
 
@@ -38,9 +45,6 @@ def log_img(img):
     c = 255 / np.log(1 + np.max(img))
     log_image = c * (np.log(img + 1))
 
-    # Specify the data type so that
-    # float value will be converted to int
-    # log_image = np.array(log_image, dtype = np.uint8)
     return log_image
 
 def gamma(x, gamma):
@@ -63,7 +67,6 @@ def blur_image(img):
     #Execução do filtro através da biblioteca OpenCV (cv2)
     return cv2.filter2D(img, cv2.CV_8U, mean_ker)
 
-
 def segmentation(img):
     print("Segmentando a imagem...")
 
@@ -79,8 +82,7 @@ def segmentation(img):
 
     print("Segmentação concluída.")
     return segmented_img
-  
-  
+
 def blur(img):
         return cv2.GaussianBlur(img, (3, 3), 0)
 
@@ -120,7 +122,6 @@ def detect_edges(img):
 
     # print("Detecção de bordas concluída.")
     return edges
-
 
 def region_based_segmentation(img):
     print("Segmentando a imagem por regiões usando Watershed...")
@@ -169,7 +170,6 @@ def region_based_segmentation(img):
     # print("Segmentação por regiões concluída.")
     return img_color
 
-
 def isolate_number(img):
     # print("Isolando números...")
     # Verifica se a imagem tem 3 canais (colorida)
@@ -196,9 +196,7 @@ def isolate_number(img):
     # print("Nenhum número encontrado.")
     return img  # Retorna a imagem original se não encontrar nada
 
-
-
-def preprocessing(img):
+def preprocessing_(img):
     # print("Aplicando pré-processamento (conversão para tons de cinza)...")
     if len(img.shape) == 3 and img.shape[2] == 3:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -210,13 +208,11 @@ def preprocessing(img):
     # print("Pré-processamento concluído.")
     return normalized_img
 
-
 def blur_image(img):
     # print("Aplicando desfoque Gaussian para reduzir ruído...")
     blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
     # print("Desfoque aplicado.")
     return blurred_img
-
 
 def binarize_otsu(img):
     # print("Aplicando binarização Otsu...")
@@ -273,7 +269,6 @@ def bhpf(img):
 
     return limiar
 
-
 def gray_segmentation(img):
     # Assuming the input image is already grayscale, no need for color conversions
 
@@ -327,3 +322,31 @@ def kmeans_segmentation(img, k=4):
     center = np.uint8(center)
     res = center[label.flatten()]
     return res.reshape((img.shape))
+
+
+class ImagePipeline:
+    def __init__(self, transformations=None):
+        self.transformations = transformations or []
+
+    def add_transformation(self, func):
+        """Add a transformation to the pipeline"""
+        self.transformations.append(func)
+
+    def process(self, image):
+        """Apply all transformations in the pipeline to the image"""
+        for transform in self.transformations:
+            image = transform(image)
+        return image
+
+# ------------------- pipelines declarations ------------------------------
+pipeline1 = ImagePipeline()
+pipeline1.add_transformation(resize(size=100))
+pipeline1.add_transformation(high_pass)
+pipeline1.add_transformation(kmeans_segmentation)
+pipeline1.add_transformation(to_grayscale)
+pipeline1.add_transformation(normalize)
+
+
+pipeline2 = ImagePipeline()
+
+pipeline3 = ImagePipeline()
