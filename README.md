@@ -1,6 +1,5 @@
 # Processamento de Imagem - 2024.1 - UFRPE
-### Por Kelves Costa, Paloma Raissa e Rubson Lima
-
+### Por Kelves Costa e Paloma Raissa
 Este trabalho foi desenvolvido como projeto de finalização e consolidação do material visto durante a disciplina de Processamento de Imagem, ministrada pelo Prof. Valmir Macario Filho na Universidade Federal Rural de Pernambuco (UFRPE).
 
 ## Objetivo do trabalho
